@@ -35,7 +35,18 @@ const obtenerMedicamentosProveedorA = async (req, res) => {
         res.status(500).json({ error: 'Ocurrió un error al obtener los medicamentos del Proveedor A.' });
     }
 };
+exports.proveedoresSinVentasUltimoAno = (req, res) => {
+    const unAnoAtras = new Date();
+    unAnoAtras.setFullYear(unAnoAtras.getFullYear() - 1);
 
+    Venta.distinct('medicamento.proveedor.nombre', { fechaVenta: { $lt: unAnoAtras } }, (err, proveedores) => {
+        if (err) {
+            res.status(500).json({ error: 'Error al buscar proveedores sin ventas en el último año' });
+        } else {
+            res.json(proveedores);
+        }
+    });
+};
 module.exports = {
     obtenerProveedores,
     listarProveedoresEnMedicamentos,

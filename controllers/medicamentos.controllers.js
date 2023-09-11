@@ -1,5 +1,5 @@
 const Medicamento = require('../models/medicamentos.js');
-
+const Venta = require('../models/ventas.js');
 const obtenerMedicamentos= async (req, res) => {
     try {
         const medicamentos = await Medicamento.find({ stock: { $lt: 50 } });
@@ -68,10 +68,46 @@ obtenerMedicamentosNoVendidos = async (req, res) => {
         res.status(500).json({ error: 'Ocurrió un error al obtener el total de medicamentos más caros.' });
     }
  }
+
+
+const medicamentoMenosVendido2023 = (req, res) => {
+    Venta.aggregate([
+        { $match: { fechaVenta: { $gte: new Date('2023-01-01'), $lte: new Date('2023-12-31') } } },
+        { $unwind: "$medicamentosVendidos" },
+        {
+            $group: {
+                _id: "$medicamentosVendidos.nombreMedicamento",
+                totalVendido: { $sum: "$medicamentosVendidos.cantidadVendida" },
+            },
+        },
+        { $sort: { totalVendido: 1 } },
+        { $limit: 1 },
+    ], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Error al obtener el medicamento menos vendido en 2023' });
+        } else {
+            res.json(result[0]);
+        }
+    });
+};
+
+const medicamentosMenosDe50Stock = (req, res) => {
+    Medicamento.find({ stock: { $lt: 50 } }, (err, medicamentos) => {
+        if (err) {
+            res.status(500).json({ error: 'Error al buscar medicamentos con menos de 50 unidades en stock' });
+        } else {
+            res.json(medicamentos);
+        }
+    });
+};
+
+
 module.exports = {
     obtenerMedicamentos,
     obtenerMedicamentosAntes2024,
     obtenerTotalMedicamentosProveedor,
     obtenerMedicamentosNoVendidos,
-    obtenerMedicamentoMasCaro
+    obtenerMedicamentoMasCaro,
+    medicamentoMenosVendido2023,
+    medicamentosMenosDe50Stock
 }
